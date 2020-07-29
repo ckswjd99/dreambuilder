@@ -1,0 +1,28 @@
+/********************************************* HEIRARCHY *********************************************/
+This is a document about class heirarchy for developing boardgame /dreambuilder/.
+
+class main:
+    Initialize modules.
+    Create an object from 'runner' class, and runs the class.
+
+class runner:
+    has variables such as
+    Initialize and stores fundamental objects, such as characters, pages, etc.
+    Initialize and stores basic variables, such as number of turns played, phase in turn, etc.
+    Update and render current page, or sometimes change the page.
+
+class page: (primitive class)
+    Most important class.
+    Gets input, and process its every reaction.
+
+
+class player:
+    has variables such as:
+        stat        - pocket size, storage size, research ability
+        pocket      - store resources
+        storage     - store components (not in use now)
+        components  - store components (in use now)
+
+class bahavior:
+    Data storing class about player's behavior in game.
+    Used to process proper components in proper condition.

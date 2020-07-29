@@ -1,0 +1,30 @@
+/********************************************* TURN PROCESSING *********************************************/
+This is a document about processes done in one turn.
+
+1. Turn Starts
+    A turn starts.
+    >>Components with condition 'When Turn Starts' operates.<<
+
+2. Choose Action
+    Player can choose his or her action of this turn.
+    There is 4 options: Collect, Mine, Manufacture, Research.
+
+    2-1. Collect
+        From Market, Add a component in player's Storage.
+        >>Components with condition 'When Collecting a Component' operates.<<
+
+    2-2. Mine
+        From dispenser, choose one resource in queue. Add the resource in player's pocket.
+        >>Components with condition 'When Mining / When Mining Specific Resources' operates.<<
+
+    2-3. Manufacture
+        From Market or Storage, manufacture a component.
+        >>Components with condition 'When Manufacturing a Component' operates.<<
+
+    2-4. Research
+        From Market, temporarily add some(appending to player's reasearch ability) Componenets, then Collect, or Manufacture, or do nothing.
+        >>Components with condition 'When Reasearch' operates.<<
+
+3. End Turn
+    A turn ends.
+    >>Components with condition 'When Turn Ends' operates.<<
