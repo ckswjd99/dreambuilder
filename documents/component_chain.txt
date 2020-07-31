@@ -1,0 +1,17 @@
+/********************************************* COMPONENT CHAIN PROCESSING *********************************************/
+This is a document about chain processing between components.
+
+There is constants already defined, about behaviors of player or cards, such as:
+    TURN_START
+    ACTION_COLLECT
+    ACTION_MINE
+    ACTION_MANUFACTURE
+    ACTION_RESEARCH
+    USE_RESOURCE
+    USE_RESOURCE_JOY
+    USE_RESOURCE_SADNESS
+    USE_RESOURCE_ANGER
+    USE_RESOURCE_FEAR
+    ...etc
+
+And there are function "process(CONSTANT)" in every case that need to operate other components.
