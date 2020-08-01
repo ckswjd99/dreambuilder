@@ -12,9 +12,20 @@ RED             = (255,   0,   0)
 YELLOW          = (255, 212,   0)
 ORANGE          = (255, 127,   0)
 
+SKY_BLUE        = (109, 151, 237)
+CURTAIN_BLUE    = (216, 226, 250)
+
 
 
 # NAME CONSTANTS
+
+# PAGE STATE
+PAGE_LOAD_DELAY         = 8
+
+PAGE_LOAD               = 0
+PAGE_RUNNING            = 1
+PAGE_ESCAPE             = 2
+PAGE_END                = 3
 
 # PHASE
 GAME_START              = -1
@@ -32,4 +43,8 @@ RESOURCE_SADNESS    = 2
 RESOURCE_ANGER      = 3
 RESOURCE_FEAR       = 4
 
+
+# FONTS
+import font
+middle_font = font.font("fonts/middle.png")
 
