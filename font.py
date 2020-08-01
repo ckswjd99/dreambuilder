@@ -28,7 +28,7 @@ class font:
         result_image = self.resource.subsurface(pygame.Rect((start_loc, 0), (end_loc-start_loc, self.resource.get_height())))
         return result_image
 
-    def line(self, l):
+    def line(self, l, color):
         letters = []
         for c in l:
             letters.append( self.letter(c) )
@@ -46,6 +46,11 @@ class font:
             result_image.blit(c, (add_index, 0))
             add_index += c.get_width()
             add_index += self.word_space
+
+        for i in range(result_image.get_width()):
+            for j in range(result_image.get_height()):
+                if result_image.get_at((i,j)) == (0,0,0):
+                    result_image.set_at((i,j), color)
 
         result_image.set_colorkey((255,255,255))
 

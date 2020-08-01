@@ -10,7 +10,7 @@ class camera:   # Primitive Class
         self.padding = self.page.padding
         self.offset = [0, 0]
         self.speed = [0,0]
-        self.max_speed = 6
+        self.max_speed = 12
         self.acc = 1
 
     def coord_screen_to_game(self, pos):
@@ -79,7 +79,6 @@ class camera:   # Primitive Class
             self.speed[1] = self.max_speed
         if self.speed[1] < -self.max_speed:
             self.speed[1] = -self.max_speed
-
         
         self.move_focus(self.speed[0], self.speed[1])
 
@@ -123,6 +122,7 @@ class page:     # Primitive Class
         self.padding = [200, 200]
         self.camera = camera(self)
         self.buttons = []
+        self.mouse_coord = [0,0]
 
         self.tick = 0
         self.state = PAGE_LOAD
@@ -242,6 +242,8 @@ class button_quit_fix(button):
 class box(button):
     def __init__(self, page, image, image_hover, x, y, w, h, lines):
         button.__init__(self, page, image, image_hover, x, y, w, h)
+        self.next_icon = pygame.image.load("images/box_next.png")
+        self.next_icon.set_colorkey((255,0,0))
         self.lines = lines
         self.now_line = 0
         self.loop = False
@@ -258,7 +260,11 @@ class box(button):
 
     def render(self):
         self.page.runner.screen.blit(self.image, (self.x, self.y))
-        self.page.runner.screen.blit(middle_font.line(self.lines[self.now_line]), (self.x+self.offset[0], self.y+self.offset[1]))
+        self.page.runner.screen.blit(middle_font.line(self.lines[self.now_line], RED), (self.x+self.offset[0], self.y+self.offset[1]))
+        if self.now_line != len(self.lines)-1:
+            offset = [50,35]
+            self.next_icon.set_colorkey((255,0,0))
+            self.page.runner.screen.blit(self.next_icon, (self.x+self.w-offset[0], self.y+self.h-offset[1]))
         pass
 
 
@@ -270,8 +276,6 @@ class page_title(page):
         self.padding = [480, 280]
         self.camera = camera_reversemouse(self)
         self.image = pygame.image.load("images/title.png")
-        self.mouse_coord = [0,0]
-        
 
         self.buttons.append( button_movepage_fix(self, "images/button_start.png", "images/button_start_hover.png", 150, 340, 200, 30, 'choose_tutorial') )
         self.buttons.append( button_movepage_fix(self, "images/button_ending.png", "images/button_ending_hover.png", 225, 425, 200, 30, None) )
@@ -346,6 +350,7 @@ class page_choose_tutorial(page):
         self.padding = [480, 280]
 
         self.buttons.append( box(self, "images/box.png", "images/box.png", 300, 100, 400, 250, ["Hello.", "Under Construction..."]) )
+        self.buttons.append( button_movepage_fix(self, "images/button_start.png", "images/button_start_hover.png", 400, 500, 200, 30, 'gameboard') )
         self.buttons.append( button_quit_fix(self, "images/button_quit.png", "images/button_quit_hover.png", 400, 550, 200, 30) )
 
     def refresh(self):
@@ -395,8 +400,72 @@ class page_choose_tutorial(page):
 
         pygame.display.flip()
 
+class page_gameboard(page):
+    def __init__(self, runner):
+        page.__init__(self, runner)
+        self.image = pygame.image.load("images/gameboard.png")
 
+        self.w = 3300
+        self.h = 800
+        self.padding = [350,200]
+        self.camera.set_padding(self.padding)
+        self.camera.set_limit(GAME_SCREEN_SIZE[0]/2, self.w-GAME_SCREEN_SIZE[0]/2, GAME_SCREEN_SIZE[1]/2, self.h-GAME_SCREEN_SIZE[1]/2)
+        self.mouse_coord = [0,0]
 
+    def refresh(self):
+        self.tick = 0
+        self.state = PAGE_LOAD
+        self.camera.focus = [self.w/2, self.h/2]
+    
+    def update(self):
+        self.tick += 1
+        # Input Process
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.runner.gameIsEnd = True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:   # Left Click
+                    for b in self.buttons:
+                        b.click(event.pos)
+            if event.type == pygame.MOUSEMOTION:
+                # Update mouse_coord
+                self.mouse_coord[0] = event.pos[0]
+                self.mouse_coord[1] = event.pos[1]
+
+                # Check buttons hover
+                for b in self.buttons:
+                    b.hover(event.pos)
+        
+        self.camera.update()
+
+        self.render()
+    
+    def render(self):
+        self.runner.screen.fill(BLACK)
+        self.runner.screen.blit(self.image, (0-self.camera.get_offset()[0] ,0-self.camera.get_offset()[1]))
+
+        for b in self.buttons:
+            b.render()
+
+        # CURTAIN
+        if self.state == PAGE_LOAD:
+            curtain = pygame.Surface(GAME_SCREEN_SIZE)
+            curtain.fill(CURTAIN_BLUE)
+            curtain.set_alpha(255*(PAGE_LOAD_DELAY-self.tick)/PAGE_LOAD_DELAY)
+            self.runner.screen.blit(curtain, (0,0))
+            if self.tick == PAGE_LOAD_DELAY:
+                self.state = PAGE_RUNNING
+
+        if self.state == PAGE_ESCAPE:
+            curtain = pygame.Surface(GAME_SCREEN_SIZE)
+            curtain.fill(CURTAIN_BLUE)
+            curtain.set_alpha(255*(PAGE_LOAD_DELAY-self.escape_time+self.tick)/PAGE_LOAD_DELAY)
+            self.runner.screen.blit(curtain, (0,0))
+            if self.tick == self.escape_time:
+                self.runner.change_page(self.new_page)
+
+        pygame.display.flip()
+        pass
 
 
 
@@ -407,4 +476,5 @@ def standard(runner):
     pool_standard = {}
     pool_standard['title'] = page_title(runner)
     pool_standard['choose_tutorial'] = page_choose_tutorial(runner)
+    pool_standard['gameboard'] = page_gameboard(runner)
     return pool_standard
