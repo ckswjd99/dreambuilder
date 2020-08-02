@@ -1,7 +1,10 @@
 import pygame
 from basic import *
 
-class camera:   # Primitive Class
+#========================= PRIMITIVE CLASS =========================#
+
+# Primitive Class: <CAMREA>
+class camera:
     def __init__(self, page):
         self.page = page
         self.focus = [GAME_SCREEN_SIZE[0]/2, GAME_SCREEN_SIZE[1]/2]
@@ -86,7 +89,9 @@ class camera:   # Primitive Class
         self.offset[0] -= (self.offset[0]-self.focus[0]+GAME_SCREEN_SIZE[0]/2)/focus_smoothe
         self.offset[1] -= (self.offset[1]-self.focus[1]+GAME_SCREEN_SIZE[1]/2)/focus_smoothe
 
-class button:      # Primitive Class
+
+# Primitive Class: <BUTTON>
+class button:
     def __init__(self, page, image, image_hover, x, y, w, h):
         self.page = page
         self.image_normal = pygame.image.load(image)
@@ -114,7 +119,8 @@ class button:      # Primitive Class
         self.page.runner.screen.blit(self.image, (self.x-self.page.camera.get_offset()[0], self.y-self.page.camera.get_offset()[1]))
 
 
-class page:     # Primitive Class
+# Primitive Class: <PAGE>
+class page:
     def __init__(self, runner):
         self.w = 1000
         self.h = 600
@@ -145,8 +151,9 @@ class page:     # Primitive Class
 
 
 
-# USE CLASS
+#========================= FOR USE CLASS =========================#
 
+# For Use Class: <CAMERA_REVERSEMOUSE>
 class camera_reversemouse(camera):
     def __init__(self, page):
         camera.__init__(self, page)
@@ -196,7 +203,9 @@ class camera_reversemouse(camera):
         focus_smoothe = 10
         self.offset[0] -= (self.offset[0]-self.focus[0]+GAME_SCREEN_SIZE[0]/2)/focus_smoothe
         self.offset[1] -= (self.offset[1]-self.focus[1]+GAME_SCREEN_SIZE[1]/2)/focus_smoothe
-        
+
+
+# For Use Class: <BUTTON_MOVEPAGE_FIX>
 class button_movepage_fix(button):
     def __init__(self, page, image, image_hover, x, y, w, h, nextpage):
         button.__init__(self, page, image, image_hover, x, y, w, h)
@@ -219,6 +228,8 @@ class button_movepage_fix(button):
     def render(self):
         self.page.runner.screen.blit(self.image, (self.x, self.y))
 
+
+# For Use Class: <BUTTON_QUIT_FIX>
 class button_quit_fix(button):
     def __init__(self, page, image, image_hover, x, y, w, h):
         button.__init__(self, page, image, image_hover, x, y, w, h)
@@ -239,6 +250,7 @@ class button_quit_fix(button):
         self.page.runner.screen.blit(self.image, (self.x, self.y))
 
 
+# For Use Class: <BOX>
 class box(button):
     def __init__(self, page, image, image_hover, x, y, w, h, lines):
         button.__init__(self, page, image, image_hover, x, y, w, h)
@@ -268,6 +280,7 @@ class box(button):
         pass
 
 
+# For Use Class: <PAGE_TITLE>
 class page_title(page):
     def __init__(self,runner):
         page.__init__(self, runner)
@@ -342,6 +355,7 @@ class page_title(page):
         pass
 
 
+# For Use Class: <PAGE_CHOOSE_TUTORIAL>
 class page_choose_tutorial(page):
     def __init__(self, runner):
         page.__init__(self, runner)
@@ -400,17 +414,22 @@ class page_choose_tutorial(page):
 
         pygame.display.flip()
 
+
+# For Use Class: <PAGE_GAMEBOARD>
 class page_gameboard(page):
     def __init__(self, runner):
         page.__init__(self, runner)
-        self.image = pygame.image.load("images/gameboard.png")
+        self.image = pygame.image.load("images/gameboard_bg.png")
 
-        self.w = 3300
+        self.w = 2800
         self.h = 800
         self.padding = [350,200]
         self.camera.set_padding(self.padding)
-        self.camera.set_limit(GAME_SCREEN_SIZE[0]/2, self.w-GAME_SCREEN_SIZE[0]/2, GAME_SCREEN_SIZE[1]/2, self.h-GAME_SCREEN_SIZE[1]/2)
         self.mouse_coord = [0,0]
+        self.camera.set_limit(-9999,9999, -9999,9999)
+        self.overlay = False
+        self.overlay_buttons = []
+        self.overlay_buttons.append( button_quit_fix(self, "images/button_quit.png", "images/button_quit_hover.png", 400, 300, 200, 30) )
 
     def refresh(self):
         self.tick = 0
@@ -423,6 +442,9 @@ class page_gameboard(page):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.runner.gameIsEnd = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == 27:    # Key ESC
+                    self.overlay = not self.overlay
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:   # Left Click
                     for b in self.buttons:
@@ -436,13 +458,61 @@ class page_gameboard(page):
                 for b in self.buttons:
                     b.hover(event.pos)
         
+        # Overlay Case
+        if self.overlay:
+            overlay_bg = pygame.Surface(GAME_SCREEN_SIZE)
+            overlay_bg.fill(WHITE)
+            overlay_bg.set_alpha(127)
+            self.runner.screen.blit(overlay_bg,(0,0))
+
+            overlay_done = False
+            while not overlay_done:
+                self.runner.clock.tick(GAME_FPS)
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN and event.key == 27:
+                        self.overlay = False
+                        overlay_done = True
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if event.button == 1:   # Left Click
+                           for b in self.overlay_buttons:
+                               b.click(event.pos)
+                    if event.type == pygame.MOUSEMOTION:
+                        # Check buttons hover
+                        for b in self.overlay_buttons:
+                            b.hover(event.pos)
+                if self.runner.gameIsEnd:
+                    break
+
+
+
+                for b in self.overlay_buttons:
+                    b.render()
+                pygame.display.flip()
+                
+        
+        
+        
         self.camera.update()
 
         self.render()
     
     def render(self):
-        self.runner.screen.fill(BLACK)
+        # CURTAIN
+        if self.state == PAGE_LOAD:
+            self.camera.focus = [0, -GAME_SCREEN_SIZE[1]*100]
+        else:
+            self.camera.set_limit(GAME_SCREEN_SIZE[0]/2, self.w-GAME_SCREEN_SIZE[0]/2, GAME_SCREEN_SIZE[1]/2, self.h-GAME_SCREEN_SIZE[1]/2)
+        print(self.camera.focus)
+        # BACKGROUND
+        self.runner.screen.fill(SKY_BLUE)
         self.runner.screen.blit(self.image, (0-self.camera.get_offset()[0] ,0-self.camera.get_offset()[1]))
+        #moon = pygame.image.load("images/gameboard_moon.png")
+        #moon.set_colorkey((60,60,60))
+        #self.runner.screen.blit(moon, (2300-self.camera.get_offset()[0], -100-self.camera.get_offset()[1]))
+        #cloud = pygame.image.load("images/gameboard_cloud.png")
+        #cloud.set_colorkey((60,60,60))
+        #self.runner.screen.blit(cloud, (0-self.camera.get_offset()[0], 0-self.camera.get_offset()[1]))
+
 
         for b in self.buttons:
             b.render()
