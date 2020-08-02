@@ -43,6 +43,20 @@ class player:
         self.components= []
         self.research_ability = 3
 
+    def add_resource(self, resource):
+        pocket_now = self.pocket['JOY'] + self.pocket['SADNESS'] + self.pocket['ANGER'] + self.pocket['FEAR']
+        if pocket_now < self.pocket_size:
+            if resource == RESOURCE_JOY:
+                self.pocket['JOY'] += 1
+            elif resource == RESOURCE_SADNESS:
+                self.pocket['SADNESS'] += 1
+            elif resource == RESOURCE_ANGER:
+                self.pocket['ANGER'] += 1
+            elif resource == RESOURCE_FEAR:
+                self.pocket['FEAR'] += 1
+            return True
+        else:
+            return False
 
 
 

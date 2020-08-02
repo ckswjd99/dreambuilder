@@ -49,7 +49,7 @@ class font:
 
         for i in range(result_image.get_width()):
             for j in range(result_image.get_height()):
-                if result_image.get_at((i,j)) == (0,0,0):
+                if result_image.get_at((i,j)) == (0,0,0) or result_image.get_at((i,j)) == (1,1,1):
                     result_image.set_at((i,j), color)
 
         result_image.set_colorkey((255,255,255))

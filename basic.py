@@ -47,4 +47,5 @@ RESOURCE_FEAR       = 4
 # FONTS
 import font
 middle_font = font.font("fonts/middle.png")
+times_new_roman = font.font("fonts/times_new_roman.png")
 

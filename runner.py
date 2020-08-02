@@ -18,6 +18,7 @@ class runner:
 
         self.gameIsEnd = False
         self.page_now = self.pages['title']
+        self.page_now.refresh()
 
         while(not self.gameIsEnd):
             self.clock.tick(GAME_FPS)

@@ -95,8 +95,8 @@ class button:
     def __init__(self, page, image, image_hover, x, y, w, h):
         self.page = page
         self.image_normal = pygame.image.load(image)
-        self.image_hover = pygame.image.load(image_hover)
         self.image = self.image_normal
+        self.image_hover = pygame.image.load(image_hover)
         self.x = x
         self.y = y
         self.w = w
@@ -134,6 +134,7 @@ class page:
         self.state = PAGE_LOAD
         self.escape_time = None
         self.new_page = None
+        self.timer = {}
 
     def refresh(self):
         self.tick = 0
@@ -204,6 +205,32 @@ class camera_reversemouse(camera):
         self.offset[0] -= (self.offset[0]-self.focus[0]+GAME_SCREEN_SIZE[0]/2)/focus_smoothe
         self.offset[1] -= (self.offset[1]-self.focus[1]+GAME_SCREEN_SIZE[1]/2)/focus_smoothe
 
+# For Use Class: <BUTTON_NEXTTURN>
+class button_nextturn(button):
+    def __init__(self, page, image, image_hover, x, y, w, h, nextpage):
+        button.__init__(self, page, image, image_hover, x, y, w, h)
+        self.nextpage = nextpage
+
+    def operate(self):
+        self.page.new_page = self.nextpage
+        self.page.state = PAGE_ESCAPE
+        self.page.runner.system.turn += 1
+        self.page.runner.system.phase = TURN_END
+        self.page.escape_time = self.page.tick + PAGE_LOAD_DELAY
+
+    def hover(self, pos):
+        realpos = self.page.camera.coord_screen_to_game(pos)
+        if self.x < realpos[0] and realpos[0] < self.x+self.w and self.y < realpos[1] and realpos[1] < self.y+self.h:
+            self.image = self.image_hover
+        else:
+            self.image = self.image_normal
+
+    def click(self, pos):
+        realpos = self.page.camera.coord_screen_to_game(pos)
+        if self.x < realpos[0] and realpos[0] < self.x+self.w and self.y < realpos[1] and realpos[1] < self.y+self.h:
+            self.operate()
+    def render(self):
+        self.page.runner.screen.blit(self.image, (self.x-self.page.camera.offset[0], self.y-self.page.camera.offset[1]))
 
 # For Use Class: <BUTTON_MOVEPAGE_FIX>
 class button_movepage_fix(button):
@@ -246,6 +273,7 @@ class button_quit_fix(button):
     def click(self, pos):
         if self.x < pos[0] and pos[0] < self.x+self.w and self.y < pos[1] and pos[1] < self.y+self.h:
             self.operate()
+
     def render(self):
         self.page.runner.screen.blit(self.image, (self.x, self.y))
 
@@ -278,6 +306,55 @@ class box(button):
             self.next_icon.set_colorkey((255,0,0))
             self.page.runner.screen.blit(self.next_icon, (self.x+self.w-offset[0], self.y+self.h-offset[1]))
         pass
+
+
+# For Use Class: <BUTTON_QUIT_FIX>
+class button_resource(button):
+    def __init__(self, page, image, image_hover, x, y, w, h, kind):
+        button.__init__(self, page, image, image_hover, x, y, w, h)
+        self.kind = kind
+        if self.kind == RESOURCE_JOY:
+            self.image_normal = pygame.image.load("images/resource_joy.png")
+            self.image_hover = pygame.image.load("images/resource_joy_hover.png")
+        elif self.kind == RESOURCE_SADNESS:
+            self.image_normal = pygame.image.load("images/resource_sadness.png")
+            self.image_hover = pygame.image.load("images/resource_sadness_hover.png")
+        elif self.kind == RESOURCE_ANGER:
+            self.image_normal = pygame.image.load("images/resource_anger.png")
+            self.image_hover = pygame.image.load("images/resource_anger_hover.png")
+        elif self.kind == RESOURCE_FEAR:
+            self.image_normal = pygame.image.load("images/resource_fear.png")
+            self.image_hover = pygame.image.load("images/resource_fear_hover.png")
+        self.image_normal.set_colorkey((60,60,60))
+        self.image_hover.set_colorkey((60,60,60))
+    
+    def hover(self, pos):
+        if self.x < pos[0] and pos[0] < self.x+self.w and self.y < pos[1] and pos[1] < self.y+self.h:
+            self.image = self.image_hover
+        else:
+            self.image = self.image_normal
+
+    def click(self, pos):
+        realpos = self.page.camera.coord_screen_to_game(pos)
+        if self.x < realpos[0] and realpos[0] < self.x+self.w and self.y < realpos[1] and realpos[1] < self.y+self.h:
+            self.operate()
+    
+    def operate(self):
+        print("HI")
+        if self.page.runner.system.player.add_resource(self.kind):
+            index = self.page.resources.index(self)
+            self.page.runner.system.dispenser.pop(index)
+            self.page.runner.system.dispenser.fill()
+            self.page.resources.pop(index)
+
+    def update(self):
+        pass
+
+    def render(self):
+        self.page.runner.screen.blit(self.image, (self.x-self.page.camera.offset[0], self.y-self.page.camera.offset[1]))
+        
+        
+        
 
 
 # For Use Class: <PAGE_TITLE>
@@ -427,14 +504,37 @@ class page_gameboard(page):
         self.camera.set_padding(self.padding)
         self.mouse_coord = [0,0]
         self.camera.set_limit(-9999,9999, -9999,9999)
+
+        self.buttons.append( button_nextturn(self, "images/button_start.png", "images/button_start_hover.png", 400, 500, 200, 30, 'gameboard') )
+
+        self.resources = []
+
         self.overlay = False
         self.overlay_buttons = []
         self.overlay_buttons.append( button_quit_fix(self, "images/button_quit.png", "images/button_quit_hover.png", 400, 300, 200, 30) )
 
+        self.turn_display = pygame.image.load("images/turn_display.png")
+
     def refresh(self):
         self.tick = 0
         self.state = PAGE_LOAD
-        self.camera.focus = [self.w/2, self.h/2]
+        self.turn_display = pygame.image.load("images/turn_display.png")
+        self.runner.system.phase = TURN_START
+        self.timer['turn_display_tick'] = 60
+        self.camera.set_limit(-9999,9999, -9999,9999)
+        self.camera.focus = [0, 9999]
+
+        # Fill Dispenser
+        self.runner.system.dispenser.fill()
+        for i in range(len(self.runner.system.dispenser.queue)):
+            if self.runner.system.dispenser.queue[i] == RESOURCE_JOY:
+                self.resources.append( button_resource(self, "images/null.png", "images/null.png", i*50, 600, 50, 50, RESOURCE_JOY) )
+            elif self.runner.system.dispenser.queue[i] == RESOURCE_SADNESS:
+                self.resources.append( button_resource(self, "images/null.png", "images/null.png", i*50, 600, 50, 50, RESOURCE_SADNESS) )
+            elif self.runner.system.dispenser.queue[i] == RESOURCE_ANGER:
+                self.resources.append( button_resource(self, "images/null.png", "images/null.png", i*50, 600, 50, 50, RESOURCE_ANGER) )
+            elif self.runner.system.dispenser.queue[i] == RESOURCE_FEAR:
+                self.resources.append( button_resource(self, "images/null.png", "images/null.png", i*50, 600, 50, 50, RESOURCE_FEAR) )
     
     def update(self):
         self.tick += 1
@@ -449,6 +549,8 @@ class page_gameboard(page):
                 if event.button == 1:   # Left Click
                     for b in self.buttons:
                         b.click(event.pos)
+                    for r in self.resources:
+                        r.click(event.pos)
             if event.type == pygame.MOUSEMOTION:
                 # Update mouse_coord
                 self.mouse_coord[0] = event.pos[0]
@@ -457,6 +559,9 @@ class page_gameboard(page):
                 # Check buttons hover
                 for b in self.buttons:
                     b.hover(event.pos)
+                
+                for r in self.resources:
+                    r.hover(event.pos)
         
         # Overlay Case
         if self.overlay:
@@ -497,27 +602,23 @@ class page_gameboard(page):
         self.render()
     
     def render(self):
-        # CURTAIN
+        # STATE: PAGE_LOAD
         if self.state == PAGE_LOAD:
             self.camera.focus = [0, -GAME_SCREEN_SIZE[1]*100]
         else:
             self.camera.set_limit(GAME_SCREEN_SIZE[0]/2, self.w-GAME_SCREEN_SIZE[0]/2, GAME_SCREEN_SIZE[1]/2, self.h-GAME_SCREEN_SIZE[1]/2)
-        print(self.camera.focus)
-        # BACKGROUND
+        
+        # STATE: ALL
         self.runner.screen.fill(SKY_BLUE)
         self.runner.screen.blit(self.image, (0-self.camera.get_offset()[0] ,0-self.camera.get_offset()[1]))
-        #moon = pygame.image.load("images/gameboard_moon.png")
-        #moon.set_colorkey((60,60,60))
-        #self.runner.screen.blit(moon, (2300-self.camera.get_offset()[0], -100-self.camera.get_offset()[1]))
-        #cloud = pygame.image.load("images/gameboard_cloud.png")
-        #cloud.set_colorkey((60,60,60))
-        #self.runner.screen.blit(cloud, (0-self.camera.get_offset()[0], 0-self.camera.get_offset()[1]))
-
 
         for b in self.buttons:
             b.render()
+        
+        for r in self.resources:
+            r.render()
 
-        # CURTAIN
+        # STATE: PAGE_LOAD
         if self.state == PAGE_LOAD:
             curtain = pygame.Surface(GAME_SCREEN_SIZE)
             curtain.fill(CURTAIN_BLUE)
@@ -525,7 +626,10 @@ class page_gameboard(page):
             self.runner.screen.blit(curtain, (0,0))
             if self.tick == PAGE_LOAD_DELAY:
                 self.state = PAGE_RUNNING
+                self.runner.system.state = TURN_START
+                self.turn_display_tick = 60
 
+        # STATE: PAGE_LOAD
         if self.state == PAGE_ESCAPE:
             curtain = pygame.Surface(GAME_SCREEN_SIZE)
             curtain.fill(CURTAIN_BLUE)
@@ -533,6 +637,17 @@ class page_gameboard(page):
             self.runner.screen.blit(curtain, (0,0))
             if self.tick == self.escape_time:
                 self.runner.change_page(self.new_page)
+
+        # PHASE: TURN_START
+        if self.runner.system.phase == TURN_START:
+            self.timer['turn_display_tick'] -= 1
+            offset = [220,10]
+            self.turn_display.blit(times_new_roman.line(str(self.runner.system.turn), (221,148,49)), (offset[0],offset[1]))
+            self.runner.screen.blit(self.turn_display, (GAME_SCREEN_SIZE[0]/2-self.turn_display.get_width()/2, GAME_SCREEN_SIZE[1]/2-self.turn_display.get_height()/2))
+
+            if self.timer['turn_display_tick'] == 0:
+                self.runner.system.phase = CHOOSE_ACTION
+
 
         pygame.display.flip()
         pass
